@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Будеш моїм Валентином?</title>
+  <style>
+    :root{
+      --bgColor: #ffeef2;
+      --cardColor: #fff6f8;
+      --primary: #ff6b9a;
+      --primary-contrast: #ffffff;
+      --accent: #ffd1e0;
+      --text: #3b2b2b;
+      --muted: #7a5b5b;
+      --shadow: 0 8px 30px rgba(75, 40, 60, 0.12);
+      --radius: 18px;
+      --card-width: min(92vw, 420px);
+      --glass-border: 1px solid rgba(255,255,255,0.6);
+      --transition: 240ms cubic-bezier(.2,.9,.25,1);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { 
+      height: 100%; 
+      margin: 0; 
+      font-family: system-ui, -apple-system, sans-serif; 
+      overflow: hidden; 
+    }
+
+    body {
+      background: linear-gradient(180deg, var(--bgColor), #fff6fa 60%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: var(--card-width);
+      background: var(--cardColor);
+      border-radius: calc(var(--radius) + 6px);
+      box-shadow: var(--shadow);
+      padding: clamp(20px, 3.6vw, 32px);
+      text-align: center;
+      position: relative;
+      border: var(--glass-border);
+      z-index: 100;
+    }
+
+    .emoji { font-size: clamp(36px, 7vw, 56px); line-height: 1; margin-bottom: 10px; }
+    .title { font-weight: 700; font-size: clamp(20px, 5.6vw, 34px); margin: 6px 0 18px; color: #4b2a3a; }
+
+    .buttons { display: flex; align-items: center; justify-content: center; gap: 20px; height: 88px; margin-top: 8px; }
+    
+    .btn-yes {
+      appearance: none; border: none; padding: 12px 28px; border-radius: 999px; font-weight: 700; font-size: 16px; cursor: pointer;
+      background: linear-gradient(90deg, var(--primary), #ff8bb3); color: var(--primary-contrast);
+      box-shadow: 0 6px 18px rgba(255, 107, 154, 0.25);
+      transition: transform var(--transition);
+      min-width: 120px;
+    }
+
+    .btn-no {
+      appearance: none; border: none; padding: 10px 22px; border-radius: 999px; font-weight: 700; font-size: 15px; cursor: pointer;
+      background: linear-gradient(90deg, var(--accent), #ffe9f0); color: #5b3a3f;
+      box-shadow: 0 6px 18px rgba(150, 80, 120, 0.06);
+      transition: transform 300ms cubic-bezier(.2,.9,.25,1);
+      position: fixed; z-index: 110; min-width: 100px; touch-action: manipulation;
+      will-change: transform;
+    }
+
+    .thanks { padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.4); margin-top: 12px; }
+    .thanks p { color: var(--muted); white-space: pre-wrap; line-height: 1.4; }
+
+    .falling-heart {
+      position: fixed;
+      top: -120px; 
+      pointer-events: none;
+      z-index: 10;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      will-change: transform;
+    }
+
+    @keyframes fall {
+      0% { 
+        transform: translateY(0) rotate(0deg); 
+        opacity: 0; 
+      }
+      15% { opacity: 1; }
+      85% { opacity: 1; }
+      100% { 
+        transform: translateY(115vh) rotate(var(--rot)); 
+        opacity: 0; 
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="card">
+    <div class="emoji">🥰</div>
+    <h1 class="title">Будеш моїм валентином? 😘🥰</h1>
+
+    <div class="buttons" id="buttonsArea">
+      <button class="btn-yes" id="btnYes">Так</button>
+      <button class="btn-no" id="btnNo">Ні</button>
+    </div>
+
+    <div id="resultArea"></div>
+  </main>
+
+  <script>
+  const CONFIG = {
+    heartsCount: 40,
+    spawnInterval: 200,
+    heartSize: 55,
+    minSpeed: 7,
+    maxSpeed: 14,
+    totalImages: 15,
+    noMovePercent: 0.3
+  };
+
+  /*************************************************************************
+   * СИСТЕМА ПАДАЮЧИХ ФОТО З РАНДОМНИМ ОБЕРТАННЯМ
+   *************************************************************************/
+  function initFallingHearts() {
+    let spawned = 0;
+
+    const spawn = () => {
+      if (spawned >= CONFIG.heartsCount) return;
+
+      const heart = document.createElement('div');
+      heart.className = 'falling-heart';
+      heart.style.width = CONFIG.heartSize + 'px';
+      heart.style.height = CONFIG.heartSize + 'px';
+      document.body.appendChild(heart);
+
+      startAnimation(heart);
+      
+      spawned++;
+      setTimeout(spawn, CONFIG.spawnInterval);
+    };
+
+    function startAnimation(el) {
+      const imgNum = Math.floor(Math.random() * CONFIG.totalImages) + 1;
+      const posX = Math.random() * 92; 
+      const duration = Math.random() * (CONFIG.maxSpeed - CONFIG.minSpeed) + CONFIG.minSpeed;
+
+      let finalRotation = 0;
+      if (Math.random() > 0.5) {
+        const direction = Math.random() > 0.5 ? 1 : -1;
+        finalRotation = direction * (Math.random() * 270 + 90);
+      } else {
+        finalRotation = (Math.random() - 0.5) * 30;
+      }
+
+      el.style.backgroundImage = `url('${imgNum}.webp')`;
+      el.style.left = posX + 'vw';
+      el.style.setProperty('--rot', `${finalRotation}deg`);
+      
+      el.style.animation = `fall ${duration}s linear forwards`;
+
+      el.onanimationend = () => {
+        el.style.animation = 'none';
+        void el.offsetWidth; 
+        startAnimation(el);
+      };
+    }
+
+    spawn();
+  }
+
+  /*************************************************************************
+   * ЛОГІКА КНОПКИ "НІ"
+   *************************************************************************/
+  (function NoButtonLogic(){
+    const btnNo = document.getElementById('btnNo');
+    const btnYes = document.getElementById('btnYes');
+    const resultArea = document.getElementById('resultArea');
+    
+    let currentX = 0;
+    let currentY = 0;
+
+    function updatePos() {
+      btnNo.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+      btnNo.style.left = '0'; 
+      btnNo.style.top = '0';
+      btnNo.style.margin = '0';
+    }
+
+    function setInitialPosition() {
+      const yesRect = btnYes.getBoundingClientRect();
+      currentX = yesRect.right + 20;
+      currentY = yesRect.top;
+
+      if (currentX + btnNo.offsetWidth > window.innerWidth) {
+        currentX = yesRect.left - btnNo.offsetWidth - 20;
+      }
+      updatePos();
+    }
+
+    function moveNo() {
+      const bw = btnNo.offsetWidth;
+      const bh = btnNo.offsetHeight;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      const maxJump = Math.min(vw, vh) * CONFIG.noMovePercent;
+      const minJump = bw; 
+
+      const angle = Math.random() * Math.PI * 2;
+      const dist = Math.random() * (maxJump - minJump) + minJump;
+
+      let nextX = currentX + Math.cos(angle) * dist;
+      let nextY = currentY + Math.sin(angle) * dist;
+
+      const pad = 20;
+      nextX = Math.max(pad, Math.min(nextX, vw - bw - pad));
+      nextY = Math.max(pad, Math.min(nextY, vh - bh - pad));
+
+      currentX = nextX;
+      currentY = nextY;
+      updatePos();
+    }
+
+    btnNo.addEventListener('mouseenter', moveNo);
+    btnNo.addEventListener('touchstart', (e) => { e.preventDefault(); moveNo(); });
+    btnNo.addEventListener('click', (e) => { e.preventDefault(); moveNo(); });
+
+    btnYes.addEventListener('click', () => {
+      btnNo.style.display = 'none';
+      resultArea.innerHTML = `
+        <div class="thanks">
+          <h2>Дякую! 💖</h2>
+          <p>Кохана, ти зробила мій день ще кращий ❤️❤️ як і робиш його що дня ❤️❤️❤️ моє ти сонце що осяює моє життя ❤️❤️❤️ дякую тобі ❤️❤️❤️❤️ кохаю тебе ❤️❤️❤️❤️❤️</p>
+        </div>`;
+    });
+
+    window.addEventListener('load', () => {
+      setInitialPosition();
+      initFallingHearts();
+    });
+    
+    window.addEventListener('resize', setInitialPosition);
+  })();
+  </script>
+</body>
+</html>
