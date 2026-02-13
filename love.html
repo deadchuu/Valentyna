@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Будеш моїм Валентином?</title>
+
+  <!-- Легка, чітка типографіка (без зовнішніх бібліотек можеш змінити) -->
+  <style>
+    /* ================ Основні кольори (можеш змінити) ================
+       bgColor: основний фон (ніжний пастельний рожевий)
+       cardColor: світліший прямокутник
+       primary: кнопка "Так"
+       accent: кнопка "Ні"
+    ==================================================================*/
+    :root{
+      --bgColor: #ffeef2;        /* ніжний рожевий фон */
+      --cardColor: #fff6f8;      /* ще світліший для картки */
+      --primary: #ff6b9a;        /* активна кнопка */
+      --primary-contrast: #ffffff;
+      --accent: #ffd1e0;         /* колір "Ні" (не обов'язково видно) */
+      --text: #3b2b2b;
+      --muted: #7a5b5b;
+      --shadow: 0 8px 30px rgba(75, 40, 60, 0.12);
+      --radius: 18px;
+      --card-width: min(92vw, 420px);
+      --glass-border: 1px solid rgba(255,255,255,0.6);
+      --transition: 300ms cubic-bezier(.2,.9,.25,1);
+      --heart-size-min: 12px;
+      --heart-size-max: 30px;
+    }
+
+    /* Скидаємо дефолтні відступи */
+    * { box-sizing: border-box; }
+    html,body { height:100%; margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+
+    /* Фон сторінки */
+    body{
+      background: linear-gradient(180deg, var(--bgColor), #fff6fa 60%);
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:32px;
+      overflow-x:hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Контейнер-картка, всередині якої буде форма */
+    .card {
+      width: var(--card-width);
+      background: var(--cardColor);
+      border-radius: calc(var(--radius) + 6px);
+      box-shadow: var(--shadow);
+      padding: clamp(20px, 3.6vw, 32px);
+      text-align:center;
+      position: relative; /* важливо: для позиціювання "тікаючої" кнопки всередині */
+      border: var(--glass-border);
+    }
+
+    /* Вершина картки: emoji */
+    .emoji {
+      font-size: clamp(36px, 7vw, 56px);
+      line-height:1;
+      margin-top: 4px;
+      margin-bottom: 10px;
+    }
+
+    /* Великий заголовок */
+    .title {
+      font-weight:700;
+      font-size: clamp(20px, 5.6vw, 34px);
+      margin: 6px 0 18px;
+      color: #4b2a3a;
+      letter-spacing: -0.5px;
+    }
+
+    /* Підзаголовок або інструкція (за потреби) */
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    /* Контейнер кнопок:
+       - має достатню висоту, щоб "Ні" могла пересуватися всередині
+       - вирівнювання: "Так" ліворуч, "Ні" — позиціонується абсолютно справа (щоб вона могла утікати)
+    */
+    .buttons {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 14px;
+      height: 72px; /* резерв простору для руху */
+      position: relative; /* базовий контейнер для абсолютних позицій */
+      margin-top: 8px;
+    }
+
+    /* Кнопка "Так" - звичайна, активна */
+    .btn-yes {
+      appearance:none;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-weight:700;
+      font-size:16px;
+      cursor: pointer;
+      background: linear-gradient(90deg, var(--primary), #ff8bb3);
+      color: var(--primary-contrast);
+      box-shadow: 0 6px 18px rgba(255, 107, 154, 0.25);
+      transition: transform var(--transition), box-shadow var(--transition);
+      min-width: 120px;
+    }
+    .btn-yes:active { transform: translateY(2px) scale(.997); box-shadow: 0 4px 12px rgba(255, 107, 154, 0.18); }
+
+    /* Кнопка "Ні" — візуально може бути делікатною, але ми зробимо її легшою.
+       Вона позиціонується абсолютно всередині .buttons, початково справа.
+       JS буде змінювати її style.left/top, а ми додамо плавність.
+    */
+    .btn-no {
+      appearance:none;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-weight:700;
+      font-size:15px;
+      cursor: pointer;
+      background: linear-gradient(90deg, var(--accent), #ffe9f0);
+      color: #5b3a3f;
+      box-shadow: 0 6px 18px rgba(150, 80, 120, 0.06);
+      transition: transform 120ms ease, left var(--transition), top var(--transition);
+      position: absolute;
+      right: calc(14%); /* початкова позиція (красиво праворуч) */
+      top: calc(50% - 22px); /* вертикальне центрирування (приблизно) */
+      min-width: 100px;
+      touch-action: manipulation; /* краща поведінка на мобілці */
+      user-select: none;
+    }
+
+    /* Приховуємо outline, але зберігаємо видимість для клавіатури */
+    .btn-yes:focus, .btn-no:focus {
+      outline: 3px solid rgba(255,107,154,0.18);
+      outline-offset: 4px;
+    }
+
+    /* Стиль подяки (після натискання "Так") */
+    .thanks {
+      padding: 8px 6px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.5), rgba(255,255,255,0.3));
+      margin-top: 12px;
+    }
+    .thanks h2 { margin: 6px 0 4px; font-size: clamp(18px, 4.2vw, 28px); }
+    .thanks p { color:var(--muted); margin:0; }
+
+    /* ========== Анімація падаючих сердечок ==========
+       Виконується JS (створює <span class="falling-heart">❤️</span>)
+       Тут ми описуємо ключові кадри падіння та початкові стилі
+    =================================================*/
+    .falling-heart {
+      position: fixed;
+      pointer-events: none;
+      z-index: 5;
+      will-change: transform, opacity;
+      filter: drop-shadow(0 6px 8px rgba(120,40,80,0.12));
+      transform-origin: center;
+    }
+    @keyframes fall {
+      0% { transform: translateY(-10vh) rotate(0deg) scale(0.9); opacity: 0; }
+      10% { opacity: 1; }
+      100% { transform: translateY(110vh) rotate(360deg) scale(1.05); opacity: 0.8; }
+    }
+
+    /* Мінімалістичний confetti при подяці */
+    .burst {
+      position: absolute;
+      left:50%;
+      top:40%;
+      transform: translate(-50%,-50%);
+      width: 10px;
+      height: 10px;
+      border-radius:50%;
+      pointer-events:none;
+    }
+
+    /* Підтримка reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .falling-heart { animation:none !important; transition:none !important; }
+      .btn-no { transition:none !important; }
+    }
+
+    /* Медіа-запити — якщо великий екран, даємо більше відступу */
+    @media(min-width:900px){
+      body { padding:48px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Основна картка -->
+  <main class="card" role="main" aria-labelledby="headline">
+    <div class="emoji" aria-hidden="true">🥰</div>
+
+    <h1 id="headline" class="title">Будеш моїм валентином? 😘🥰</h1>
+    <p class="subtitle">Вибери відповідь — або спробуй дістати кнопку «Ні» 😉</p>
+
+    <!-- Область, де кнопки можуть перебувати -->
+    <div class="buttons" id="buttonsArea" aria-hidden="false">
+      <button class="btn-yes" id="btnYes" aria-label="Так, я буду твоїм валентином">Так</button>
+      <button class="btn-no" id="btnNo" aria-label="Ні" tabindex="0">Ні</button>
+    </div>
+
+    <!-- Тут ми будемо підставляти подяку після натискання "Так" -->
+    <div id="resultArea" aria-live="polite"></div>
+  </main>
+
+  <!-- ========== JS: логіка падіння сердечок, поведінка кнопок ========== -->
+  <script>
+    /************************************************************************
+     * 1) Падаючі сердечка
+     *
+     * Ми періодично (setInterval) створюємо <span> з ❤️, задаємо їм
+     * довільні початкові X, швидкість, розмір і анімацію "fall".
+     * Після завершення анімації елемент видаляється.
+     ************************************************************************/
+    (function fallingHearts(){
+      const HEARTS_PER_MIN = 12; // прибл. скільки в секунду: heartsPerSec ~ HEARTS_PER_MIN/60
+      const spawnInterval = Math.max(400, Math.round(60000 / HEARTS_PER_MIN)); // ms
+
+      function spawnHeart() {
+        const el = document.createElement('span');
+        el.className = 'falling-heart';
+        el.textContent = '❤️';
+
+        // випадковий старт по горизонталі (за межами трохи, щоб виглядало природно)
+        const startX = Math.random() * 110; // у відсотках (0-110)
+        const size = (Math.random() * (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--heart-size-max')) - parseInt(getComputedStyle(document.documentElement).getPropertyValue('--heart-size-min'))) + parseInt(getComputedStyle(document.documentElement).getPropertyValue('--heart-size-min')));
+
+        // випадкова тривалість падіння
+        const duration = (Math.random() * 6) + 6; // між ~6s і ~12s
+
+        // обертаємо елемент стилями
+        el.style.left = startX + 'vw';
+        el.style.fontSize = size + 'px';
+        el.style.top = '-8vh';
+        el.style.opacity = String(0.95 - Math.random() * 0.25);
+        el.style.animation = `fall ${duration}s linear forwards`;
+        el.style.transform = `translateZ(0)`;
+
+        // невеликі випадкові коливання за допомогою анімації transform в CSS не додаємо
+        document.body.appendChild(el);
+
+        // Видаляємо після закінчення анімації (duration + невеликий буфер)
+        setTimeout(()=> {
+          if (el && el.parentNode) el.parentNode.removeChild(el);
+        }, (duration + 0.8) * 1000);
+      }
+
+      // Запускаємо інтервал народження сердечок
+      const spawner = setInterval(spawnHeart, spawnInterval);
+
+      // Зберегти таймер в window для дебагу (опціонально)
+      window.__heartSpawner = { stop: () => clearInterval(spawner) };
+    })();
+
+
+    /************************************************************************
+     * 2) Поведінка кнопок:
+     * - btnYes: при кліку — замінює вміст картки на подяку (легкий ефект)
+     * - btnNo: "тікає" при mouseenter або touchstart — рухається в рандомну
+     *         позицію всередині контейнера .buttons
+     *
+     * Деталі реалізації:
+     * - Для "тікаючої" кнопки використовуємо абсолютне позиціювання всередині
+     *   .buttons (яка має position:relative).
+     * - Рух обмежуємо межами контейнера, щоб кнопка не стирчала за межі.
+     * - Додаємо невеликий cooldown (200ms), щоб не перестрибувала 1000 разів підряд.
+     ************************************************************************/
+    (function buttonsLogic(){
+      const btnYes = document.getElementById('btnYes');
+      const btnNo = document.getElementById('btnNo');
+      const buttonsArea = document.getElementById('buttonsArea');
+      const resultArea = document.getElementById('resultArea');
+      let lastMove = 0;          // часто оновлюється для cooldown
+      const MOVE_COOLDOWN = 160; // ms, мінімальний інтервал між переміщеннями
+
+      // --- функція перемістити «Ні» в випадкове місце ---
+      function moveNoButtonRandomly() {
+        const now = performance.now();
+        if (now - lastMove < MOVE_COOLDOWN) return; // короткий захист від надто частих викликів
+        lastMove = now;
+
+        // Блок, в межах якого кнопка може рухатись (внутрішні відступи враховано)
+        const areaRect = buttonsArea.getBoundingClientRect();
+        const btnRect = btnNo.getBoundingClientRect();
+
+        // Обчислимо доступну ширину/висоту для розташування кнопки (в межах area)
+        const maxX = Math.max(8, areaRect.width - btnRect.width - 8);
+        const maxY = Math.max(8, areaRect.height - btnRect.height - 8);
+
+        // Випадкова позиція всередині пів-ширини контейнера (щоб завжди була поруч, але тікала)
+        const randX = Math.random() * maxX;
+        const randY = Math.random() * maxY;
+
+        // Встановлюємо стилі (позицію відносно контейнера)
+        // Використовуємо left/top у px
+        const leftPx = Math.round(randX);
+        const topPx = Math.round(randY);
+
+        btnNo.style.left = leftPx + 'px';
+        btnNo.style.top = topPx + 'px';
+      }
+
+      // --- Подія: коли курсор заходить на кнопку (desktop) ---
+      btnNo.addEventListener('mouseenter', (e) => {
+        moveNoButtonRandomly();
+      });
+
+      // --- Подія: при фокусі з клавіатури (якщо користувач табом потрапив) ---
+      btnNo.addEventListener('focus', (e) => {
+        // Кнопка «тікає» також при focus — щоб користувачу було важче її натиснути
+        moveNoButtonRandomly();
+      });
+
+      // --- Для сенсорних екранів: touchstart або touchmove ---
+      btnNo.addEventListener('touchstart', function(e){
+        // Запобігаємо "натисканню" на кнопку (щоб дотик лише викликав переміщення)
+        e.preventDefault();
+        moveNoButtonRandomly();
+      }, { passive:false });
+
+      // Якщо користувач випадково натисне «Ні» (дуже рідкісний випадок),
+      // просто запобіжимо стандартній поведінці:
+      btnNo.addEventListener('click', (e) => {
+        e.preventDefault();
+        moveNoButtonRandomly();
+      });
+
+      // --- Логіка "Так" ---
+      btnYes.addEventListener('click', () => {
+        // Анімаційний ефект: міняємо вміст картки на блок подяки
+        resultArea.innerHTML = `
+          <div class="thanks" role="status">
+            <h2>Дякую! 💖</h2>
+            <p>Ти зробив(ла) мій день особливим. З нетерпінням чекаю нашої зустрічі ❤️</p>
+          </div>
+        `;
+
+        // Створимо невеликий "вибух сердець" всередині картки для святковості
+        createBurst(18);
+      });
+
+      // Створює серединний burst (маленькі кульки/сердечка) для відчуття успіху
+      function createBurst(count = 12) {
+        const parent = document.querySelector('.card');
+        for (let i=0;i<count;i++){
+          const dot = document.createElement('div');
+          dot.className = 'burst';
+          const size = 6 + Math.random()*10;
+          dot.style.width = dot.style.height = size + 'px';
+          dot.style.background = (Math.random() > 0.5) ? '#ff6b9a' : '#ffb1c8';
+          dot.style.left = 50 + (Math.random()*60 - 30) + '%';
+          dot.style.top = 40 + (Math.random()*30 - 15) + '%';
+          dot.style.opacity = 0.95;
+          dot.style.transform = 'translate(-50%,-50%) scale(0.2)';
+          dot.style.transition = `transform 700ms cubic-bezier(.2,.8,.2,1), opacity 700ms ease`;
+
+          parent.appendChild(dot);
+
+          // через мікротаймаут запускаємо "виліт" і зникнення
+          requestAnimationFrame(()=> {
+            const tx = (Math.random()*160 - 80);
+            const ty = (Math.random()*140 - 40) - 80;
+            dot.style.transform = `translate(${tx}px, ${ty}px) scale(1)`;
+            dot.style.opacity = 0;
+          });
+
+          // Видалити елемент по завершенню
+          setTimeout(()=> {
+            if (dot.parentNode) dot.parentNode.removeChild(dot);
+          }, 900);
+        }
+      }
+
+      // Початкова позиція "Ні" (щоб на мобільних виглядало охайно)
+      // Розміщуємо правіше при ініціалізації (перформанс-можливо)
+      window.addEventListener('load', ()=> {
+        // якщо область вже відрендерена — встановимо початкові координати
+        const areaRect = buttonsArea.getBoundingClientRect();
+        const btnRect = btnNo.getBoundingClientRect();
+        // помістимо кнопку праворуч по дефолту
+        btnNo.style.left = Math.max(6, Math.round(areaRect.width - btnRect.width - 12)) + 'px';
+        btnNo.style.top = Math.round((areaRect.height - btnRect.height)/2) + 'px';
+      });
+    })();
+  </script>
+</body>
+</html>
